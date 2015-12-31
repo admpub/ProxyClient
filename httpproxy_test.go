@@ -11,7 +11,7 @@ import (
 const (CONNECT = "CONNECT")
 
 // 伪装成为一个代理服务器。
-func testHttpProixyServer(t *testing.T, proxyAddr string, rAddr string, ci chan int) {
+func testHTTPProixyServer(t *testing.T, proxyAddr string, rAddr string, ci chan int) {
 
 	l, err := net.Listen("tcp", proxyAddr)
 	if err != nil {
@@ -69,7 +69,7 @@ func testHttpProixyServer(t *testing.T, proxyAddr string, rAddr string, ci chan 
 
 func TestHttpProxy(t *testing.T) {
 	ci := make(chan int)
-	go testHttpProixyServer(t, "127.0.0.1:1331", "www.google.com:80", ci)
+	go testHTTPProixyServer(t, "127.0.0.1:1331", "www.google.com:80", ci)
 	<-ci
 
 	p, err := NewProxyClient("http://127.0.0.1:1331?standardheader=True")

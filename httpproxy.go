@@ -45,7 +45,7 @@ type httpProxyClient struct {
 // proxyDomain				ssl 验证域名，"" 则使用 proxyAddr 部分的域名
 // insecureSkipVerify		使用https代理时是否忽略证书检查
 // UpProxy
-func newHttpProxyClient(proxyType string, proxyAddr string, proxyDomain string, auth string, insecureSkipVerify bool, StandardHeader bool, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
+func newHTTPProxyClient(proxyType string, proxyAddr string, proxyDomain string, auth string, insecureSkipVerify bool, StandardHeader bool, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
 	proxyType = strings.ToLower(strings.Trim(proxyType, " \r\n\t"))
 	if proxyType != "http" && proxyType != "https" {
 		return nil, errors.New("ProxyType 错误的格式，只支持http、https代理。")
@@ -119,7 +119,7 @@ func (p *httpProxyClient) DialTCPSAddrTimeout(network string, raddr string, time
 		return nil, fmt.Errorf("无法连接代理服务器 %v ，错误：%v", p.proxyAddr, err)
 	}
 
-	var c Conn = rawConn
+	c := Conn(rawConn)
 
 	ch := make(chan int)
 
@@ -318,6 +318,6 @@ func (c *httpTCPConn) ProxyClient() ProxyClient {
 	return c.proxyClient
 }
 
-func (c *httpProxyClient)GetProxyAddrQuery() map[string][]string {
-	return c.query
+func (p *httpProxyClient)GetProxyAddrQuery() map[string][]string {
+	return p.query
 }

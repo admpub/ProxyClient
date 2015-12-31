@@ -198,6 +198,6 @@ func (c *ssUDPConn) ProxyClient() ProxyClient {
 	return c.proxyClient
 }
 
-func (c *ssProxyClient)GetProxyAddrQuery() map[string][]string {
-	return c.query
+func (p *ssProxyClient)GetProxyAddrQuery() map[string][]string {
+	return p.query
 }

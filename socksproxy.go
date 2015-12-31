@@ -16,7 +16,7 @@ import (
 const (
 	socksCmdConect = 0x01
 	socksCmdBind = 0x02
-	socksCmdUdpAssociate = 0x03
+	socksCmdUDPAssociate = 0x03
 )
 
 type socksTCPConn struct {
@@ -458,6 +458,6 @@ func socksRecvCmdResponse(r io.Reader, p *socksProxyClient) (rep int, dstAddr st
 	}
 }
 
-func (c *socksProxyClient)GetProxyAddrQuery() map[string][]string {
-	return c.query
+func (p *socksProxyClient)GetProxyAddrQuery() map[string][]string {
+	return p.query
 }

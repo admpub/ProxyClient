@@ -9,13 +9,14 @@ import (
 	"time"
 )
 
-// 连接
+// Conn 用来表示连接
 type Conn interface {
 	net.Conn
 }
 
-// 表示 TCP 连接
-// 提供 net.TcpConn 全部的方法，但是部分方法由于代理协议的限制可能不能获得正确的结果。例如：LocalAddr 、RemoteAddr 方法不被很多代理协议支持。
+// TCPConn 用来表示 TCP 连接
+// 提供 net.TcpConn 结构的全部方法
+// 但是部分方法由于代理协议的限制可能不能获得正确的结果。例如：LocalAddr 、RemoteAddr 方法不被很多代理协议支持。
 type TCPConn interface {
 	Conn
 
@@ -35,21 +36,23 @@ type TCPConn interface {
 	SetWriteBuffer(bytes int) error
 }
 
+// ProxyTCPConn 用来表示通过代理访问的TCP连接
 type ProxyTCPConn interface {
 	TCPConn
 	ProxyClient() ProxyClient // 获得所属的代理
 }
 
-// 表示 UDP 连接
+// UDPConn 表示 UDP 连接
 type UDPConn interface {
 	Conn
 }
 
+// ProxyUDPConn 用来表示通过代理访问的TCP连接
 type ProxyUDPConn interface {
 	UDPConn
 	ProxyClient() ProxyClient // 获得所属的代理
 }
-// 仿 net 库接口的代理客户端
+// ProxyClient 仿 net 库接口的代理客户端
 // 支持级联代理功能，可以通过 SetUpProxy 设置上级代理。
 type ProxyClient interface {
 	// 返回本代理的上层级联代理
@@ -85,7 +88,7 @@ type ProxyClient interface {
 	GetProxyAddrQuery() map[string][]string
 }
 
-// 创建代理客户端
+// NewProxyClient 用来创建代理客户端
 //
 // 参数格式：允许使用 ?参数名1=参数值1&参数名2=参数值2指定参数
 // 例如：https://123.123.123.123:8088?insecureskipverify=true
@@ -120,7 +123,7 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 
 	scheme := strings.ToLower(strings.TrimSpace(u.Scheme))
 
-	var upProxy ProxyClient = nil
+	var upProxy ProxyClient
 	if up, ok := query["upproxy"]; ok == true {
 		if upProxy, err = NewProxyClient(up[0]); err != nil {
 			return nil, fmt.Errorf("upProxy 创建失败：%v", err)
@@ -131,9 +134,9 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 	case "direct":
 		if localAddr, ok := query["localaddr"]; ok {
 			return newDriectProxyClient(localAddr[0], query)
-		} else {
-			return newDriectProxyClient(":0", query)
 		}
+		return newDriectProxyClient(":0", query)
+
 	case "socks4", "socks4a", "socks5":
 		username := ""
 		password := ""
@@ -161,7 +164,7 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 
 		domain := u.Query().Get("domain")
 
-		return newHttpProxyClient(scheme, u.Host, domain, auth, insecureSkipVerify, standardHeader, upProxy, query)
+		return newHTTPProxyClient(scheme, u.Host, domain, auth, insecureSkipVerify, standardHeader, upProxy, query)
 	case "ss":
 		password, ok := u.User.Password()
 		if ok == false {

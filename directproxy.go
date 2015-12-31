@@ -142,6 +142,6 @@ func (c *directTCPConn) ProxyClient() ProxyClient {
 func (c *directUDPConn) ProxyClient() ProxyClient {
 	return c.proxyClient
 }
-func (c *directProxyClient)GetProxyAddrQuery() map[string][]string {
-	return c.query
+func (p *directProxyClient)GetProxyAddrQuery() map[string][]string {
+	return p.query
 }
