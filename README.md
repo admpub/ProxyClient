@@ -7,39 +7,6 @@ golang 代理客户端，和 net 标准库一致的 API 。
 
 ``` go
 
-package main
-
-import (
-	"fmt"
-	"github.com/gamexg/proxyclient"
-	"io"
-	"io/ioutil"
-)
-
-func main() {
-	p, err := proxyclient.NewProxyClient("socks5://127.0.0.1:5556?upProxy=https://145.2.1.3:8080")
-	if err != nil {
-		panic("创建代理客户端错误")
-	}
-
-	c, err := p.Dial("tcp", "www.google.com:80")
-	if err != nil {
-		panic("连接错误")
-	}
-
-	io.WriteString(c, "GET / HTTP/1.0\r\nHOST:www.google.com\r\n\r\n")
-	b, err := ioutil.ReadAll(c)
-	if err != nil {
-		panic("读错误")
-	}
-	fmt.Print(string(b))
-}
-
-```
-
-
-API
-``` go
 
 // 连接
 type Conn interface {
@@ -94,14 +61,19 @@ type ProxyClient interface {
 	// 对TCP和UDP网络，地址格式是host:port或[host]:port，参见函数JoinHostPort和SplitHostPort。
 	// 如果代理服务器支持远端DNS解析，那么会使用远端DNS解析。
 	Dial(network, address string) (net.Conn, error)
+
 	DialTimeout(network, address string, timeout time.Duration) (net.Conn, error)
+
 	// DialTCP在网络协议net上连接本地地址laddr和远端地址raddr。net必须是"tcp"、"tcp4"、"tcp6"；如果laddr不是nil，将使用它作为本地地址，否则自动选择一个本地地址。
 	// 由于 net.TCPAddr 内部保存的是IP地址及端口，所以使用本函数无法使用远端DNS解析，要想使用远端DNS解析，请使用 Dial 或 DialTCPSAddr 函数。
 	DialTCP(net string, laddr, raddr *net.TCPAddr) (net.Conn, error)
+
 	// DialTCPSAddr 同 DialTCP 函数，主要区别是如果代理支持远端dns解析，那么会使用远端dns解析。
 	DialTCPSAddr(network string, raddr string) (ProxyTCPConn, error)
+
 	// DialTCPSAddrTimeout 同 DialTCPSAddr 函数，增加了超时功能
 	DialTCPSAddrTimeout(network string, raddr string, timeour time.Duration) (ProxyTCPConn, error)
+
 	//ListenTCP在本地TCP地址laddr上声明并返回一个*TCPListener，net参数必须是"tcp"、"tcp4"、"tcp6"，如果laddr的端口字段为0，函数将选择一个当前可用的端口，可以用Listener的Addr方法获得该端口。
 	//ListenTCP(net string, laddr *TCPAddr) (*TCPListener, error)
 	//DialTCP在网络协议net上连接本地地址laddr和远端地址raddr。net必须是"udp"、"udp4"、"udp6"；如果laddr不是nil，将使用它作为本地地址，否则自动选择一个本地地址。
@@ -113,13 +85,25 @@ type ProxyClient interface {
 }
 
 // 创建代理客户端
+//
+// 参数格式：允许使用 ?参数名1=参数值1&参数名2=参数值2指定参数
+// 例如：https://123.123.123.123:8088?insecureskipverify=true
+//
 // http 代理 http://123.123.123.123:8088
+//     可选功能： 用户认证功能。格式：http://user:password@123.123.123:8080
+//     可选参数：standardheader=false true表示 CONNNET 请求包含标准的 Accept、Accept-Encoding、Accept-Language、User-Agent等头。默认值：false
 // https 代理 https://123.123.123.123:8088
+//     可选功能： 用户认证功能，同 http 代理。
+//     可选参数：standardheader=false 同上 http 代理
+//     可选参数：insecureskipverify=false true表示跳过 https 证书验证。默认false。
 // socks4 代理 socks4://123.123.123.123:5050  socks4 协议不支持远端 dns 解析
 // socks4a 代理 socks4a://123.123.123.123:5050
-// socks5 代理 socks5://123.123.123.123:5050?upProxy=http://145.2.1.3:8080
+// socks5 代理 socks5://123.123.123.123:5050
 // ss 代理 ss://method:passowd@123.123.123:5050
-// 直连 direct://0.0.0.0:0000/?LocalAddr=123.123.123.123:0
+// 直连 direct://0.0.0.0:0000
+//     可选参数： LocalAddr=0.0.0.0:0 表示tcp连接绑定的本地ip及端口，默认值 0.0.0.0:0。
+//
+// 全体协议可选参数： upProxy=http://145.2.1.3:8080 用于指定代理的上层代理，即代理嵌套。默认值：direct://0.0.0.0:0000
 func NewProxyClient(addr string) (ProxyClient, error)
 
 ```
