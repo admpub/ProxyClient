@@ -14,7 +14,7 @@ var B3 = []byte{47, 65, 36, 14, 89, 96, 32, 14, 56}
 
 func testDirectProxyTCP1(t *testing.T) {
 
-	p, err := NewDriectProxyClient("",make(map[string][]string))
+	p, err := newDriectProxyClient("",make(map[string][]string))
 	if err != nil {
 		t.Errorf("启动直连代理失败：%s", err)
 		fmt.Printf("%v %v", p, err)

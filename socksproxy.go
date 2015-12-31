@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	SocksCmdConect = 0x01
-	SocksCmdBind = 0x02
-	SocksCmdUdpAssociate = 0x03
+	socksCmdConect = 0x01
+	socksCmdBind = 0x02
+	socksCmdUdpAssociate = 0x03
 )
 
-type SocksTCPConn struct {
+type socksTCPConn struct {
 	ProxyTCPConn
 	localAddr, remoteAddr net.TCPAddr
 	localHost, remoteHost string
@@ -27,7 +27,7 @@ type SocksTCPConn struct {
 	proxyClient           ProxyClient
 }
 
-type SocksUDPConn struct {
+type socksUDPConn struct {
 	net.UDPConn
 	proxyClient ProxyClient
 }
@@ -44,14 +44,14 @@ type socksProxyClient struct {
 // ProxyType	socks4 socks5
 // ProxyAddr 	127.0.0.1:5555
 // UpProxy
-func NewSocksProxyClient(proxyType, proxyAddr, username, password string, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
+func newSocksProxyClient(proxyType, proxyAddr, username, password string, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
 	proxyType = strings.ToLower(strings.Trim(proxyType, " \r\n\t"))
 	if proxyType != "socks4" && proxyType != "socks5" {
 		return nil, errors.New("ProxyType 错误的格式")
 	}
 
 	if upProxy == nil {
-		nUpProxy, err := NewDriectProxyClient("", make(map[string][]string))
+		nUpProxy, err := newDriectProxyClient("", make(map[string][]string))
 		if err != nil {
 			return nil, fmt.Errorf("创建直连代理错误：%v", err)
 		}
@@ -147,7 +147,7 @@ func (p *socksProxyClient) DialTCPSAddrTimeout(network string, raddr string, tim
 			return
 		}
 
-		if err := socksSendCmdRequest(c, p, SocksCmdConect, raddr); err != nil {
+		if err := socksSendCmdRequest(c, p, socksCmdConect, raddr); err != nil {
 			closed = true
 			c.Close()
 			rerr = fmt.Errorf("请求代理服务器建立连接失败：%v", err)
@@ -164,7 +164,7 @@ func (p *socksProxyClient) DialTCPSAddrTimeout(network string, raddr string, tim
 			return
 		}
 
-		r := SocksTCPConn{ProxyTCPConn: c, proxyClient: p} //{c,net.ResolveTCPAddr("tcp","0.0.0.0:0"),net.ResolveTCPAddr("tcp","0.0.0.0:0"),"","",0,0  p}
+		r := socksTCPConn{ProxyTCPConn: c, proxyClient: p} //{c,net.ResolveTCPAddr("tcp","0.0.0.0:0"),net.ResolveTCPAddr("tcp","0.0.0.0:0"),"","",0,0  p}
 
 		rconn = &r
 		ch <- 1
@@ -214,11 +214,11 @@ func (p *socksProxyClient) SetUpProxy(upProxy ProxyClient) error {
 	return nil
 }
 
-func (c *SocksTCPConn) ProxyClient() ProxyClient {
+func (c *socksTCPConn) ProxyClient() ProxyClient {
 	return c.proxyClient
 }
 
-func (c *SocksUDPConn) ProxyClient() ProxyClient {
+func (c *socksUDPConn) ProxyClient() ProxyClient {
 	return c.proxyClient
 }
 

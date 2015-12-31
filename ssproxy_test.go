@@ -58,7 +58,7 @@ func TestSsProxy(t *testing.T) {
 	}()
 
 	// 发出请求，然后解密。
-	p, err := NewSsProxyClient(testServerAddr, testMethod, testPassword, nil, nil)
+	p, err := newSsProxyClient(testServerAddr, testMethod, testPassword, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

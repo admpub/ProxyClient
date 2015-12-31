@@ -17,7 +17,7 @@ import (
 	"encoding/base64"
 )
 
-type HttpTCPConn struct {
+type httpTCPConn struct {
 	Conn                                //http 协议时是原始链接、https协议时是tls.Conn
 	rawConn               TCPConn       //原始链接
 	tlsConn               *tls.Conn     //tls链接
@@ -45,14 +45,14 @@ type httpProxyClient struct {
 // proxyDomain				ssl 验证域名，"" 则使用 proxyAddr 部分的域名
 // insecureSkipVerify		使用https代理时是否忽略证书检查
 // UpProxy
-func NewHttpProxyClient(proxyType string, proxyAddr string, proxyDomain string, auth string, insecureSkipVerify bool, StandardHeader bool, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
+func newHttpProxyClient(proxyType string, proxyAddr string, proxyDomain string, auth string, insecureSkipVerify bool, StandardHeader bool, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
 	proxyType = strings.ToLower(strings.Trim(proxyType, " \r\n\t"))
 	if proxyType != "http" && proxyType != "https" {
 		return nil, errors.New("ProxyType 错误的格式，只支持http、https代理。")
 	}
 
 	if upProxy == nil {
-		nUpProxy, err := NewDriectProxyClient("", make(map[string][]string))
+		nUpProxy, err := newDriectProxyClient("", make(map[string][]string))
 		if err != nil {
 			return nil, fmt.Errorf("创建直连代理错误：%v", err)
 		}
@@ -234,7 +234,7 @@ func (p *httpProxyClient) DialTCPSAddrTimeout(network string, raddr string, time
 		}
 
 		rMutex.Lock()
-		rconn = &HttpTCPConn{c, rawConn, tlsConn, net.TCPAddr{}, net.TCPAddr{}, "", "", 0, 0, p, res.Body}
+		rconn = &httpTCPConn{c, rawConn, tlsConn, net.TCPAddr{}, net.TCPAddr{}, "", "", 0, 0, p, res.Body}
 		rMutex.Unlock()
 		ch <- 1
 		return
@@ -277,27 +277,27 @@ func (p *httpProxyClient) DialTCPSAddrTimeout(network string, raddr string, time
 }
 // 重写了 Read 接口
 // 由于 http 协议问题，解析响应需要读缓冲，所以必须重写 Read 来兼容读缓冲功能。
-func (c *HttpTCPConn) Read(b []byte) (n int, err error) {
+func (c *httpTCPConn) Read(b []byte) (n int, err error) {
 	return c.r.Read(b)
 }
 // 重写了 Read 接口
 // 由于 http 协议问题，解析响应需要读缓冲，所以必须重写 Read 来兼容读缓冲功能。
-func (c *HttpTCPConn) Close() error {
+func (c *httpTCPConn) Close() error {
 	c.r.Close()
 	return c.Conn.Close()
 }
 
-func (c *HttpTCPConn) SetLinger(sec int) error {
+func (c *httpTCPConn) SetLinger(sec int) error {
 	return c.rawConn.SetLinger(sec)
 }
 
-func (c *HttpTCPConn) SetNoDelay(noDelay bool) error {
+func (c *httpTCPConn) SetNoDelay(noDelay bool) error {
 	return c.rawConn.SetNoDelay(noDelay)
 }
-func (c *HttpTCPConn) SetReadBuffer(bytes int) error {
+func (c *httpTCPConn) SetReadBuffer(bytes int) error {
 	return c.rawConn.SetReadBuffer(bytes)
 }
-func (c *HttpTCPConn) SetWriteBuffer(bytes int) error {
+func (c *httpTCPConn) SetWriteBuffer(bytes int) error {
 	return c.rawConn.SetWriteBuffer(bytes)
 }
 
@@ -314,7 +314,7 @@ func (p *httpProxyClient) SetUpProxy(upProxy ProxyClient) error {
 	return nil
 }
 
-func (c *HttpTCPConn) ProxyClient() ProxyClient {
+func (c *httpTCPConn) ProxyClient() ProxyClient {
 	return c.proxyClient
 }
 

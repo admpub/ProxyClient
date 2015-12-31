@@ -130,9 +130,9 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 	switch scheme {
 	case "direct":
 		if localAddr, ok := query["localaddr"]; ok {
-			return NewDriectProxyClient(localAddr[0], query)
+			return newDriectProxyClient(localAddr[0], query)
 		} else {
-			return NewDriectProxyClient(":0", query)
+			return newDriectProxyClient(":0", query)
 		}
 	case "socks4", "socks4a", "socks5":
 		username := ""
@@ -142,7 +142,7 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 			password, _ = u.User.Password()
 		}
 
-		return NewSocksProxyClient(scheme, u.Host, username, password, upProxy, query)
+		return newSocksProxyClient(scheme, u.Host, username, password, upProxy, query)
 	case "http", "https":
 		auth := ""
 		if u.User != nil {
@@ -161,13 +161,13 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 
 		domain := u.Query().Get("domain")
 
-		return NewHttpProxyClient(scheme, u.Host, domain, auth, insecureSkipVerify, standardHeader, upProxy, query)
+		return newHttpProxyClient(scheme, u.Host, domain, auth, insecureSkipVerify, standardHeader, upProxy, query)
 	case "ss":
 		password, ok := u.User.Password()
 		if ok == false {
 			return nil, fmt.Errorf("ss 代理 method, password 格式错误。")
 		}
-		return NewSsProxyClient(u.Host, u.User.Username(), password, upProxy, query)
+		return newSsProxyClient(u.Host, u.User.Username(), password, upProxy, query)
 	default:
 		return nil, fmt.Errorf("未识别的代理类型：%v", scheme)
 	}

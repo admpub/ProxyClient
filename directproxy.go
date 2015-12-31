@@ -26,7 +26,7 @@ type directProxyClient struct {
 
 // 创建代理客户端
 // 直连 direct://0.0.0.0:0000/?LocalAddr=123.123.123.123:0
-func NewDriectProxyClient(localAddr string, query map[string][]string) (ProxyClient, error) {
+func newDriectProxyClient(localAddr string, query map[string][]string) (ProxyClient, error) {
 	if localAddr == "" {
 		localAddr = "0.0.0.0:0"
 	}

@@ -9,25 +9,25 @@ import (
 	"strings"
 )
 
-type SsTCPConn struct {
+type ssTCPConn struct {
 	TCPConn
 	sc          Conn
 	proxyClient ProxyClient
 }
 
-type SsUDPConn struct {
+type ssUDPConn struct {
 	net.UDPConn
 	proxyClient ProxyClient
 }
-type SsProxyClient struct {
+type ssProxyClient struct {
 	proxyAddr string
 	cipher    *ss.Cipher
 	upProxy   ProxyClient
 	query     map[string][]string
 }
 
-func NewSsProxyClient(proxyAddr, method, password string, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
-	p := SsProxyClient{}
+func newSsProxyClient(proxyAddr, method, password string, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
+	p := ssProxyClient{}
 
 	cipher, err := ss.NewCipher(method, password)
 	if err != nil {
@@ -35,7 +35,7 @@ func NewSsProxyClient(proxyAddr, method, password string, upProxy ProxyClient, q
 	}
 
 	if upProxy == nil {
-		nUpProxy, err := NewDriectProxyClient("", make(map[string][]string))
+		nUpProxy, err := newDriectProxyClient("", make(map[string][]string))
 		if err != nil {
 			return nil, fmt.Errorf("创建直连代理错误：%v", err)
 		}
@@ -51,7 +51,7 @@ func NewSsProxyClient(proxyAddr, method, password string, upProxy ProxyClient, q
 }
 
 
-func (p *SsProxyClient) Dial(network, address string) (net.Conn, error) {
+func (p *ssProxyClient) Dial(network, address string) (net.Conn, error) {
 	if strings.HasPrefix(strings.ToLower(network), "tcp") {
 		return p.DialTCPSAddr(network, address)
 	} else if strings.HasPrefix(strings.ToLower(network), "udp") {
@@ -65,7 +65,7 @@ func (p *SsProxyClient) Dial(network, address string) (net.Conn, error) {
 	}
 }
 
-func (p *SsProxyClient) DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
+func (p *ssProxyClient) DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp4", "tcp6":
 		return p.DialTCPSAddrTimeout(network, address, timeout)
@@ -76,7 +76,7 @@ func (p *SsProxyClient) DialTimeout(network, address string, timeout time.Durati
 	}
 }
 
-func (p *SsProxyClient) DialTCP(network string, laddr, raddr *net.TCPAddr) (net.Conn, error) {
+func (p *ssProxyClient) DialTCP(network string, laddr, raddr *net.TCPAddr) (net.Conn, error) {
 	if laddr != nil || laddr.Port != 0 {
 		return nil, errors.New("代理协议不支持指定本地地址。")
 	}
@@ -84,11 +84,11 @@ func (p *SsProxyClient) DialTCP(network string, laddr, raddr *net.TCPAddr) (net.
 	return p.DialTCPSAddr(network, raddr.String())
 }
 
-func (p *SsProxyClient) DialTCPSAddr(network string, raddr string) (ProxyTCPConn, error) {
+func (p *ssProxyClient) DialTCPSAddr(network string, raddr string) (ProxyTCPConn, error) {
 	return p.DialTCPSAddrTimeout(network, raddr, 0)
 }
 
-func (p *SsProxyClient) DialTCPSAddrTimeout(network string, raddr string, timeout time.Duration) (rconn ProxyTCPConn, rerr error) {
+func (p *ssProxyClient) DialTCPSAddrTimeout(network string, raddr string, timeout time.Duration) (rconn ProxyTCPConn, rerr error) {
 	// 截止时间
 	finalDeadline := time.Time{}
 	if timeout != 0 {
@@ -130,7 +130,7 @@ func (p *SsProxyClient) DialTCPSAddrTimeout(network string, raddr string, timeou
 			return
 		}
 
-		r := SsTCPConn{TCPConn: c, sc:sc, proxyClient: p} //{c,net.ResolveTCPAddr("tcp","0.0.0.0:0"),net.ResolveTCPAddr("tcp","0.0.0.0:0"),"","",0,0  p}
+		r := ssTCPConn{TCPConn: c, sc:sc, proxyClient: p} //{c,net.ResolveTCPAddr("tcp","0.0.0.0:0"),net.ResolveTCPAddr("tcp","0.0.0.0:0"),"","",0,0  p}
 
 		rconn = &r
 		ch <- 1
@@ -167,37 +167,37 @@ func (p *SsProxyClient) DialTCPSAddrTimeout(network string, raddr string, timeou
 	}
 }
 
-func (p *SsProxyClient) DialUDP(network string, laddr, raddr *net.UDPAddr) (conn net.Conn, err error) {
+func (p *ssProxyClient) DialUDP(network string, laddr, raddr *net.UDPAddr) (conn net.Conn, err error) {
 	return nil, errors.New("暂不支持 UDP 协议")
 }
 
-func (p *SsProxyClient) UpProxy() ProxyClient {
+func (p *ssProxyClient) UpProxy() ProxyClient {
 	return p.upProxy
 }
 
-func (p *SsProxyClient) SetUpProxy(upProxy ProxyClient) error {
+func (p *ssProxyClient) SetUpProxy(upProxy ProxyClient) error {
 	p.upProxy = upProxy
 	return nil
 }
 
-func (c *SsTCPConn) ProxyClient() ProxyClient {
+func (c *ssTCPConn) ProxyClient() ProxyClient {
 	return c.proxyClient
 }
-func (c *SsTCPConn) Write(b []byte) (n int, err error) {
+func (c *ssTCPConn) Write(b []byte) (n int, err error) {
 	return c.sc.Write(b)
 }
-func (c *SsTCPConn) Read(b []byte) (n int, err error) {
+func (c *ssTCPConn) Read(b []byte) (n int, err error) {
 	return c.sc.Read(b)
 }
 
-func (c *SsTCPConn) Close() error {
+func (c *ssTCPConn) Close() error {
 	return c.sc.Close()
 }
 
-func (c *SsUDPConn) ProxyClient() ProxyClient {
+func (c *ssUDPConn) ProxyClient() ProxyClient {
 	return c.proxyClient
 }
 
-func (c *SsProxyClient)GetProxyAddrQuery() map[string][]string {
+func (c *ssProxyClient)GetProxyAddrQuery() map[string][]string {
 	return c.query
 }
