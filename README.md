@@ -96,6 +96,7 @@ type ProxyClient interface {
 //     可选功能： 用户认证功能，同 http 代理。
 //     可选参数：standardheader=false 同上 http 代理
 //     可选参数：insecureskipverify=false true表示跳过 https 证书验证。默认false。
+//     可选参数：domain=域名 指定https验证证书时使用的域名，默认为 host:port
 // socks4 代理 socks4://123.123.123.123:5050  socks4 协议不支持远端 dns 解析
 // socks4a 代理 socks4a://123.123.123.123:5050
 // socks5 代理 socks5://123.123.123.123:5050
