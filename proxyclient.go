@@ -62,14 +62,19 @@ type ProxyClient interface {
 	// 对TCP和UDP网络，地址格式是host:port或[host]:port，参见函数JoinHostPort和SplitHostPort。
 	// 如果代理服务器支持远端DNS解析，那么会使用远端DNS解析。
 	Dial(network, address string) (net.Conn, error)
+
 	DialTimeout(network, address string, timeout time.Duration) (net.Conn, error)
+
 	// DialTCP在网络协议net上连接本地地址laddr和远端地址raddr。net必须是"tcp"、"tcp4"、"tcp6"；如果laddr不是nil，将使用它作为本地地址，否则自动选择一个本地地址。
 	// 由于 net.TCPAddr 内部保存的是IP地址及端口，所以使用本函数无法使用远端DNS解析，要想使用远端DNS解析，请使用 Dial 或 DialTCPSAddr 函数。
 	DialTCP(net string, laddr, raddr *net.TCPAddr) (net.Conn, error)
+
 	// DialTCPSAddr 同 DialTCP 函数，主要区别是如果代理支持远端dns解析，那么会使用远端dns解析。
 	DialTCPSAddr(network string, raddr string) (ProxyTCPConn, error)
+
 	// DialTCPSAddrTimeout 同 DialTCPSAddr 函数，增加了超时功能
 	DialTCPSAddrTimeout(network string, raddr string, timeour time.Duration) (ProxyTCPConn, error)
+
 	//ListenTCP在本地TCP地址laddr上声明并返回一个*TCPListener，net参数必须是"tcp"、"tcp4"、"tcp6"，如果laddr的端口字段为0，函数将选择一个当前可用的端口，可以用Listener的Addr方法获得该端口。
 	//ListenTCP(net string, laddr *TCPAddr) (*TCPListener, error)
 	//DialTCP在网络协议net上连接本地地址laddr和远端地址raddr。net必须是"udp"、"udp4"、"udp6"；如果laddr不是nil，将使用它作为本地地址，否则自动选择一个本地地址。
@@ -86,8 +91,10 @@ type ProxyClient interface {
 // 例如：https://123.123.123.123:8088?insecureskipverify=true
 //
 // http 代理 http://123.123.123.123:8088
+//     可选功能： 用户认证功能。格式：http://user:password@123.123.123:8080
 //     可选参数：standardheader=false true表示 CONNNET 请求包含标准的 Accept、Accept-Encoding、Accept-Language、User-Agent等头。默认值：false
 // https 代理 https://123.123.123.123:8088
+//     可选功能： 用户认证功能，同 http 代理。
 //     可选参数：standardheader=false 同上 http 代理
 //     可选参数：insecureskipverify=false true表示跳过 https 证书验证。默认false。
 // socks4 代理 socks4://123.123.123.123:5050  socks4 协议不支持远端 dns 解析
