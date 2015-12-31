@@ -127,3 +127,4 @@ func NewProxyClient(addr string) (ProxyClient, error)
 ## 感谢
 
 * ss 协议使用的是 [ss-go](https://github.com/shadowsocks/shadowsocks-go)
+* 感谢 zhuhaow 为 http、https 协议添加鉴定功能
