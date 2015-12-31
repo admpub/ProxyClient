@@ -1,5 +1,5 @@
 # ProxyClient
-[![Build Status](https://travis-ci.org/GameXG/ProxyClient.svg?branch=master)](https://travis-ci.org/GameXG/ProxyClient) [![GoDoc](https://godoc.org/github.com/GameXG/ProxyClient?status.svg)](https://godoc.org/github.com/GameXG/ProxyClient)
+[![Build Status](https://travis-ci.org/GameXG/ProxyClient.svg?branch=master)](https://travis-ci.org/GameXG/ProxyClient)
 
 golang 代理客户端，和 net 标准库一致的 API 。
 支持嵌套代理，支持 socks4、socks4a、socks5、http、https、ss 代理协议。其中 socks5 支持用户名、密码认证，http、https支持用户名、密码基本认证。
@@ -8,13 +8,14 @@ golang 代理客户端，和 net 标准库一致的 API 。
 ``` go
 
 
-// 连接
+// Conn 用来表示连接
 type Conn interface {
 	net.Conn
 }
 
-// 表示 TCP 连接
-// 提供 net.TcpConn 全部的方法，但是部分方法由于代理协议的限制可能不能获得正确的结果。例如：LocalAddr 、RemoteAddr 方法不被很多代理协议支持。
+// TCPConn 用来表示 TCP 连接
+// 提供 net.TcpConn 结构的全部方法
+// 但是部分方法由于代理协议的限制可能不能获得正确的结果。例如：LocalAddr 、RemoteAddr 方法不被很多代理协议支持。
 type TCPConn interface {
 	Conn
 
@@ -34,21 +35,23 @@ type TCPConn interface {
 	SetWriteBuffer(bytes int) error
 }
 
+// ProxyTCPConn 用来表示通过代理访问的TCP连接
 type ProxyTCPConn interface {
 	TCPConn
 	ProxyClient() ProxyClient // 获得所属的代理
 }
 
-// 表示 UDP 连接
+// UDPConn 表示 UDP 连接
 type UDPConn interface {
 	Conn
 }
 
+// ProxyUDPConn 用来表示通过代理访问的TCP连接
 type ProxyUDPConn interface {
 	UDPConn
 	ProxyClient() ProxyClient // 获得所属的代理
 }
-// 仿 net 库接口的代理客户端
+// ProxyClient 仿 net 库接口的代理客户端
 // 支持级联代理功能，可以通过 SetUpProxy 设置上级代理。
 type ProxyClient interface {
 	// 返回本代理的上层级联代理
@@ -84,7 +87,7 @@ type ProxyClient interface {
 	GetProxyAddrQuery() map[string][]string
 }
 
-// 创建代理客户端
+// NewProxyClient 用来创建代理客户端
 //
 // 参数格式：允许使用 ?参数名1=参数值1&参数名2=参数值2指定参数
 // 例如：https://123.123.123.123:8088?insecureskipverify=true
@@ -92,16 +95,23 @@ type ProxyClient interface {
 // http 代理 http://123.123.123.123:8088
 //     可选功能： 用户认证功能。格式：http://user:password@123.123.123:8080
 //     可选参数：standardheader=false true表示 CONNNET 请求包含标准的 Accept、Accept-Encoding、Accept-Language、User-Agent等头。默认值：false
+//
 // https 代理 https://123.123.123.123:8088
 //     可选功能： 用户认证功能，同 http 代理。
 //     可选参数：standardheader=false 同上 http 代理
 //     可选参数：insecureskipverify=false true表示跳过 https 证书验证。默认false。
 //     可选参数：domain=域名 指定https验证证书时使用的域名，默认为 host:port
-// socks4 代理 socks4://123.123.123.123:5050  socks4 协议不支持远端 dns 解析
+//
+// socks4 代理 socks4://123.123.123.123:5050
+//     注意：socks4 协议不支持远端 dns 解析
+//
 // socks4a 代理 socks4a://123.123.123.123:5050
+//
 // socks5 代理 socks5://123.123.123.123:5050
 //     可选功能：用户认证功能。支持无认证、用户名密码认证，格式同 http 代理。
+//
 // ss 代理 ss://method:passowd@123.123.123:5050
+//
 // 直连 direct://0.0.0.0:0000
 //     可选参数： LocalAddr=0.0.0.0:0 表示tcp连接绑定的本地ip及端口，默认值 0.0.0.0:0。
 //

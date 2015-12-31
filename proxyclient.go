@@ -96,16 +96,23 @@ type ProxyClient interface {
 // http 代理 http://123.123.123.123:8088
 //     可选功能： 用户认证功能。格式：http://user:password@123.123.123:8080
 //     可选参数：standardheader=false true表示 CONNNET 请求包含标准的 Accept、Accept-Encoding、Accept-Language、User-Agent等头。默认值：false
+//
 // https 代理 https://123.123.123.123:8088
 //     可选功能： 用户认证功能，同 http 代理。
 //     可选参数：standardheader=false 同上 http 代理
 //     可选参数：insecureskipverify=false true表示跳过 https 证书验证。默认false。
 //     可选参数：domain=域名 指定https验证证书时使用的域名，默认为 host:port
-// socks4 代理 socks4://123.123.123.123:5050  socks4 协议不支持远端 dns 解析
+//
+// socks4 代理 socks4://123.123.123.123:5050
+//     注意：socks4 协议不支持远端 dns 解析
+//
 // socks4a 代理 socks4a://123.123.123.123:5050
+//
 // socks5 代理 socks5://123.123.123.123:5050
 //     可选功能：用户认证功能。支持无认证、用户名密码认证，格式同 http 代理。
+//
 // ss 代理 ss://method:passowd@123.123.123:5050
+//
 // 直连 direct://0.0.0.0:0000
 //     可选参数： LocalAddr=0.0.0.0:0 表示tcp连接绑定的本地ip及端口，默认值 0.0.0.0:0。
 //
