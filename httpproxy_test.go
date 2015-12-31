@@ -31,13 +31,17 @@ func testHttpProixyServer(t *testing.T, proxyAddr string, rAddr string, ci chan 
 		t.Fatal("读错误：%v", err)
 	}/*else {
 		b = b[:n]
-		print(b)
+		t.Log(string(b))
 	}*/
 
 	connect := CONNECT + " " + rAddr
 
 	if bytes.Equal(b[:len(connect)], []byte(connect)) != true {
 		t.Fatal("命令不匹配！")
+	}
+
+	if bytes.Index(b, []byte("User-Agent")) < 0 {
+		t.Fatal("请求中未发现 User-Agent")
 	}
 
 	if _, err := c.Write([]byte("HTTP/1.0 200 ok\r\nAAA:111\r\n\r\n")); err != nil {
@@ -68,7 +72,7 @@ func TestHttpProxy(t *testing.T) {
 	go testHttpProixyServer(t, "127.0.0.1:1331", "www.google.com:80", ci)
 	<-ci
 
-	p, err := NewProxyClient("http://127.0.0.1:1331")
+	p, err := NewProxyClient("http://127.0.0.1:1331?standardheader=True")
 	if err != nil {
 		t.Fatal("连接代理服务器错误：%v", err)
 	}
@@ -93,7 +97,7 @@ func TestHttpProxy(t *testing.T) {
 		t.Fatal("返回内容不匹配：%v", string(b))
 	}
 
-	if _, err:= c.Read(b[:1024]); err != io.EOF {
+	if _, err := c.Read(b[:1024]); err != io.EOF {
 		t.Fatal("非预期的结尾：%v", err)
 	}
 

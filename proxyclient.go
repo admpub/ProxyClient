@@ -81,13 +81,23 @@ type ProxyClient interface {
 }
 
 // 创建代理客户端
+//
+// 参数格式：允许使用 ?参数名1=参数值1&参数名2=参数值2指定参数
+// 例如：https://123.123.123.123:8088?insecureskipverify=true
+//
 // http 代理 http://123.123.123.123:8088
+//     可选参数：standardheader=false true表示 CONNNET 请求包含标准的 Accept、Accept-Encoding、Accept-Language、User-Agent等头。默认值：false
 // https 代理 https://123.123.123.123:8088
+//     可选参数：standardheader=false 同上 http 代理
+//     可选参数：insecureskipverify=false true表示跳过 https 证书验证。默认false。
 // socks4 代理 socks4://123.123.123.123:5050  socks4 协议不支持远端 dns 解析
 // socks4a 代理 socks4a://123.123.123.123:5050
-// socks5 代理 socks5://123.123.123.123:5050?upProxy=http://145.2.1.3:8080
+// socks5 代理 socks5://123.123.123.123:5050
 // ss 代理 ss://method:passowd@123.123.123:5050
-// 直连 direct://0.0.0.0:0000/?LocalAddr=123.123.123.123:0
+// 直连 direct://0.0.0.0:0000
+//     可选参数： LocalAddr=0.0.0.0:0 表示tcp连接绑定的本地ip及端口，默认值 0.0.0.0:0。
+//
+// 全体协议可选参数： upProxy=http://145.2.1.3:8080 用于指定代理的上层代理，即代理嵌套。默认值：direct://0.0.0.0:0000
 func NewProxyClient(addr string) (ProxyClient, error) {
 	u, err := url.Parse(addr)
 	if err != nil {
@@ -122,7 +132,18 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 		if u.User != nil {
 			auth = u.User.String()
 		}
-		return NewHttpProxyClient(scheme, u.Host, "", auth, false, upProxy, query)
+
+		standardHeader := false
+		if strings.ToLower(u.Query().Get("standardheader")) == "true" {
+			standardHeader = true
+		}
+
+		insecureSkipVerify := false
+		if strings.ToLower(u.Query().Get("insecureskipverify")) == "true" {
+			insecureSkipVerify = true
+		}
+
+		return NewHttpProxyClient(scheme, u.Host, "", auth, insecureSkipVerify, standardHeader, upProxy, query)
 	case "ss":
 		password, ok := u.User.Password()
 		if ok == false {
