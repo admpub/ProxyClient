@@ -33,18 +33,18 @@ type SocksUDPConn struct {
 }
 
 type socksProxyClient struct {
-	proxyAddr string
-	proxyType string // socks4 socks5
-					 //TODO: 用户名、密码
-	upProxy   ProxyClient
-	query     map[string][]string
+	proxyType             string // socks4 socks5
+	proxyAddr             string
+	socket5Authentication []byte // socks5 鉴定数据（包含版本号0x05）
+	upProxy               ProxyClient
+	query                 map[string][]string
 }
 
 // 创建代理客户端
 // ProxyType	socks4 socks5
 // ProxyAddr 	127.0.0.1:5555
 // UpProxy
-func NewSocksProxyClient(proxyType string, proxyAddr string, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
+func NewSocksProxyClient(proxyType, proxyAddr, username, password string, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
 	proxyType = strings.ToLower(strings.Trim(proxyType, " \r\n\t"))
 	if proxyType != "socks4" && proxyType != "socks5" {
 		return nil, errors.New("ProxyType 错误的格式")
@@ -58,7 +58,23 @@ func NewSocksProxyClient(proxyType string, proxyAddr string, upProxy ProxyClient
 		upProxy = nUpProxy
 	}
 
-	return &socksProxyClient{proxyAddr, proxyType, upProxy, query}, nil
+	var Socket5Authentication []byte
+	if username != "" || password != "" {
+		userLen := len(username)
+		passLen := len(password)
+
+		if userLen > 255 || passLen > 255 {
+			return nil, fmt.Errorf("用户名或密码过长。")
+		}
+
+		Socket5Authentication = make([]byte, 0, 3 + userLen + passLen)
+		Socket5Authentication = append(Socket5Authentication, 0x01, byte(userLen))
+		Socket5Authentication = append(Socket5Authentication, []byte(username)...)
+		Socket5Authentication = append(Socket5Authentication, byte(passLen))
+		Socket5Authentication = append(Socket5Authentication, []byte(password)...)
+	}
+
+	return &socksProxyClient{proxyType, proxyAddr, Socket5Authentication, upProxy, query}, nil
 }
 
 func (p *socksProxyClient) Dial(network, address string) (net.Conn, error) {
@@ -212,18 +228,38 @@ func socksLogin(c net.Conn, p *socksProxyClient) error {
 	if p.proxyType == "socks4" || p.proxyType == "socks4a" {
 		return nil
 	} else if p.proxyType == "socks5" {
-		//TODO: 目前只支持 无密码 鉴定，后期添加其他的鉴定支持。
-		if _, err := c.Write([]byte{0x05, 0x01, 0x00}); err != nil {
-			return fmt.Errorf("连接错误，发送数据失败。%v", err)
-		}
+		if len(p.socket5Authentication) == 0 {
+			// 不需要鉴定
+			if _, err := c.Write([]byte{0x05, 0x01, 0x00}); err != nil {
+				return fmt.Errorf("连接错误，发送数据失败。%v", err)
+			}
 
-		buf := make([]byte, 2)
-		if _, err := io.ReadFull(c, buf); err != nil || bytes.Equal(buf, []byte{0x05, 0x00}) != true {
-			return fmt.Errorf("服务器不支持“不需要鉴定”，回应：%v", buf)
-		}
-		return nil
+			buf := make([]byte, 2)
+			if _, err := io.ReadFull(c, buf); err != nil || bytes.Equal(buf, []byte{0x05, 0x00}) != true {
+				return fmt.Errorf("服务器不支持“不需要鉴定”，回应：%v", buf)
+			}
+			return nil
+		} else {
+			// 用户名密码鉴定
+			if _, err := c.Write([]byte{0x05, 0x01, 0x02}); err != nil {
+				return fmt.Errorf("连接错误，发送数据失败。%v", err)
+			}
 
-	} else {
+			buf := make([]byte, 2)
+			if _, err := io.ReadFull(c, buf); err != nil || bytes.Equal(buf, []byte{0x05, 0x02}) != true {
+				return fmt.Errorf("服务器不支持“用户名、密码登录”,err:%v，回应：%v", err, buf)
+			}
+
+			if _, err := c.Write(p.socket5Authentication); err != nil {
+				return fmt.Errorf("连接错误，发送数据失败。%v", err)
+			}
+
+			if _, err := io.ReadFull(c, buf); err != nil || bytes.Equal(buf, []byte{0x01, 0x00}) != true {
+				return fmt.Errorf("socks5 登陆失败”,err：%v，回应：%v", err, buf)
+			}
+			return nil
+		}
+	}else {
 		return fmt.Errorf("不被支持的代理服务器类型: %v", p.proxyType)
 	}
 }

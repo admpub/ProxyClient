@@ -100,6 +100,7 @@ type ProxyClient interface {
 // socks4 代理 socks4://123.123.123.123:5050  socks4 协议不支持远端 dns 解析
 // socks4a 代理 socks4a://123.123.123.123:5050
 // socks5 代理 socks5://123.123.123.123:5050
+//     可选功能：用户认证功能。支持无认证、用户名密码认证，格式同 http 代理。
 // ss 代理 ss://method:passowd@123.123.123:5050
 // 直连 direct://0.0.0.0:0000
 //     可选参数： LocalAddr=0.0.0.0:0 表示tcp连接绑定的本地ip及端口，默认值 0.0.0.0:0。
