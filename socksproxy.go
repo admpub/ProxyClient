@@ -238,7 +238,6 @@ func socksLogin(c net.Conn, p *socksProxyClient) error {
 			if _, err := io.ReadFull(c, buf); err != nil || bytes.Equal(buf, []byte{0x05, 0x00}) != true {
 				return fmt.Errorf("服务器不支持“不需要鉴定”，回应：%v", buf)
 			}
-			return nil
 		} else {
 			// 用户名密码鉴定
 			if _, err := c.Write([]byte{0x05, 0x01, 0x02}); err != nil {
@@ -257,8 +256,8 @@ func socksLogin(c net.Conn, p *socksProxyClient) error {
 			if _, err := io.ReadFull(c, buf); err != nil || bytes.Equal(buf, []byte{0x01, 0x00}) != true {
 				return fmt.Errorf("socks5 登陆失败”,err：%v，回应：%v", err, buf)
 			}
-			return nil
 		}
+		return nil
 	}else {
 		return fmt.Errorf("不被支持的代理服务器类型: %v", p.proxyType)
 	}
@@ -280,11 +279,11 @@ func socksSendCmdRequest(w io.Writer, p *socksProxyClient, cmd byte, raddr strin
 		return fmt.Errorf("socks5 不支持超过255长度的域名，域名：%v", host)
 	}
 
-	if portUint64, err := strconv.ParseUint(portString, 10, 16); err != nil {
+	portUint64, err := strconv.ParseUint(portString, 10, 16)
+	if err != nil {
 		return fmt.Errorf("port 超出有效范围。port=%v", portString)
-	} else {
-		port = uint16(portUint64)
 	}
+	port = uint16(portUint64)
 
 	portByte := make([]byte, 2)
 	binary.BigEndian.PutUint16(portByte, port)
