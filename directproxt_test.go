@@ -13,7 +13,7 @@ var B3 = []byte{47, 65, 36, 14, 89, 96, 32, 14, 56}
 
 func testDirectProxyTCP1(t *testing.T) {
 
-	p, err := newDriectProxyClient("",make(map[string][]string))
+	p, err := newDriectProxyClient("", false, make(map[string][]string))
 	if err != nil {
 		t.Fatalf("启动直连代理失败：%s", err)
 		return
@@ -82,4 +82,23 @@ func TestDirectProxyTCP(t *testing.T) {
 		t.Fatalf("读结尾错误：%v", err)
 	}
 
+}
+
+// 测试 http 协议拆分功能
+// 用于规避简易的运营商劫持
+func TestSplitHttp(t *testing.T) {
+	rawBuf := []byte("GET / HTTP/1.0\r\n\r\nHOST:www.163.com\r\n\r\n")
+
+	bs := SplitHttp(rawBuf)
+	for _, v := range bs {
+		for _, s := range []string{"GET", "POST", "HOST:", "HTTP"} {
+			if bytes.Contains(v, []byte(s)) {
+				t.Errorf("错误，拆分失败 v=%v,s=%v", string(v), s)
+			}
+		}
+	}
+
+	if bytes.Equal(rawBuf, bytes.Join(bs, nil)) == false {
+		t.Errorf("拆分数据错误。")
+	}
 }

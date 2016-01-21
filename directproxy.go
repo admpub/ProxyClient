@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"bytes"
 )
 
 type directTCPConn struct {
 	net.TCPConn
-	proxyClient ProxyClient
+	splitHttp   bool // 是否拆分HTTP包
+	proxyClient *directProxyClient
 }
 
 type directUDPConn struct {
@@ -21,14 +23,20 @@ type directUDPConn struct {
 type directProxyClient struct {
 	TCPLocalAddr net.TCPAddr
 	UDPLocalAddr net.UDPAddr
+	splitHttp    bool
 	query        map[string][]string
+}
+
+func directInit() {
+
 }
 
 // 创建代理客户端
 // 直连 direct://0.0.0.0:0000/?LocalAddr=123.123.123.123:0
-func newDriectProxyClient(localAddr string, query map[string][]string) (ProxyClient, error) {
+// SplitHttp                拆分http请求到多个TCP包
+func newDriectProxyClient(localAddr string, splitHttp bool, query map[string][]string) (ProxyClient, error) {
 	if localAddr == "" {
-		localAddr = "0.0.0.0:0"
+		localAddr = ":0"
 	}
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", localAddr)
@@ -41,7 +49,7 @@ func newDriectProxyClient(localAddr string, query map[string][]string) (ProxyCli
 		return nil, errors.New("LocalAddr 错误的格式")
 	}
 
-	return &directProxyClient{*tcpAddr, *udpAddr, query}, nil
+	return &directProxyClient{*tcpAddr, *udpAddr, splitHttp, query}, nil
 }
 
 func (p *directProxyClient) Dial(network, address string) (net.Conn, error) {
@@ -76,9 +84,17 @@ func (p *directProxyClient) DialTimeout(network, address string, timeout time.Du
 		return nil, err
 	}
 
+	splitHttp := false
+	if p.splitHttp {
+		raddr, err := net.ResolveTCPAddr(network, address)
+		if err == nil && raddr.Port == 80 {
+			splitHttp = true
+		}
+	}
+
 	switch conn := conn.(type) {
 	case *net.TCPConn:
-		return &directTCPConn{*conn, p}, nil
+		return &directTCPConn{*conn, splitHttp, p}, nil
 	case *net.UDPConn:
 		return &directUDPConn{*conn, p}, nil
 	default:
@@ -94,7 +110,13 @@ func (p *directProxyClient) DialTCP(network string, laddr, raddr *net.TCPAddr) (
 	if err != nil {
 		return nil, err
 	}
-	return &directTCPConn{*conn, p}, nil
+
+	splitHttp := false
+	if p.splitHttp && laddr.Port == 80 {
+		splitHttp = true
+	}
+
+	return &directTCPConn{*conn, splitHttp, p}, nil
 }
 
 func (p *directProxyClient)DialTCPSAddr(network string, raddr string) (ProxyTCPConn, error) {
@@ -114,8 +136,16 @@ func (p *directProxyClient)DialTCPSAddrTimeout(network string, raddr string, tim
 		return nil, err
 	}
 
+	splitHttp := false
+	if p.splitHttp {
+		raddr, err := net.ResolveTCPAddr(network, raddr)
+		if err == nil && raddr.Port == 80 {
+			splitHttp = true
+		}
+	}
+
 	if tcpConn, ok := conn.(*net.TCPConn); ok {
-		return &directTCPConn{*tcpConn, p}, nil
+		return &directTCPConn{*tcpConn, splitHttp, p}, nil
 	}
 	return nil, fmt.Errorf("内部错误")
 }
@@ -138,6 +168,76 @@ func (p *directProxyClient) SetUpProxy(upProxy ProxyClient) error {
 }
 func (c *directTCPConn) ProxyClient() ProxyClient {
 	return c.proxyClient
+}
+
+// 拆分 http 请求
+// 查找 'GET', 'HEAD', 'PUT', 'POST', 'TRACE', 'OPTIONS', 'DELETE', 'CONNECT' 及 HTTP、HOST
+//
+func SplitHttp(b[]byte) (res [][]byte) {
+	split := func(b[]byte, i  int) [][]byte {
+		// 根据 i的值拆分成为 2 个 []byte 。
+		// 注意，允许 i < len(b)
+		if len(b) > i {
+			return [][]byte{b[:i], b[i:]}
+		}
+		return [][]byte{b}
+	}
+
+	for i, v := range b {
+		switch v {
+		case 'G':
+			if bytes.HasPrefix(b[i + 1:], []byte("ET ")) {
+				res = split(b, i + 1)
+				res = append([][]byte{res[0]}, split(res[1], 3)...)
+
+				return append(res[:len(res) - 1], SplitHttp(res[len(res) - 1])...)
+			}
+		case 'P':
+			if bytes.HasPrefix(b[i + 1:], []byte("OST ")) {
+				res = split(b, i + 1)
+				res = append([][]byte{res[0]}, split(res[1], 5)...)
+
+				return append(res[:len(res) - 1], SplitHttp(res[len(res) - 1])...)
+			}
+		case 'C':
+			if bytes.HasPrefix(b[i + 1:], []byte("ONNECT ")) {
+				res = split(b, i + 1)
+				res = append([][]byte{res[0]}, split(res[1], 8)...)
+
+				return append(res[:len(res) - 1], SplitHttp(res[len(res) - 1])...)
+			}
+		case 'H':
+			if bytes.HasPrefix(b[i + 1:], []byte("OST:")) {
+				res = split(b, i + 1)
+				res = append([][]byte{res[0]}, split(res[1], 8)...)
+
+				return append(res[:len(res) - 1], SplitHttp(res[len(res) - 1])...)
+			}
+			if bytes.HasPrefix(b[i + 1:], []byte("TTP")) {
+				res = split(b, i + 1)
+				res = append([][]byte{res[0]}, split(res[1], 9)...)
+
+				return append(res[:len(res) - 1], SplitHttp(res[len(res) - 1])...)
+			}
+		}
+	}
+	return [][]byte{b}
+}
+
+func (c *directTCPConn) Write(b[]byte) (n int, err error) {
+	if c.splitHttp == false {
+		return c.TCPConn.Write(b)
+	}
+
+	newBuffs := SplitHttp(b)
+	for _, buf := range newBuffs {
+		ln, lerr := c.TCPConn.Write(buf)
+		n += ln
+		if lerr != nil {
+			return n, lerr
+		}
+	}
+	return n, nil
 }
 func (c *directUDPConn) ProxyClient() ProxyClient {
 	return c.proxyClient

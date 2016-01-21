@@ -116,17 +116,34 @@ type ProxyClient interface {
 //
 // 直连 direct://0.0.0.0:0000
 //     可选参数： LocalAddr=0.0.0.0:0 表示tcp连接绑定的本地ip及端口，默认值 0.0.0.0:0。
+//     可选参数： SplitHttp=false true 表示拆分 http 请求(分多个tcp包发送)，可以解决简单的运营商 http 劫持。默认值：false 。
+//              原理是：当发现目标地址为 80 端口，发送的内容包含 GET、POST、HTTP、HOST 等关键字时，会将关键字拆分到两个包在发送出去。
+//              注意： Web 防火墙类软件、设备可能会重组 HTTP 包，造成拆分无效。目前已知 ESET Smart Security 会造成这个功能无效，即使暂停防火墙也一样无效。
+//              G|ET /pa|th H|TTTP/1.0
+//              HO|ST:www.aa|dd.com
 func NewProxyClient(addr string) (ProxyClient, error) {
 	u, err := url.Parse(addr)
 	if err != nil {
 		return nil, errors.New("addr 错误的格式")
 	}
-	_query, err := url.ParseQuery(u.RawQuery)
-	query := make(map[string][]string)
+
+	// 将 query key 转换成为小写
+	_query := u.Query()
+	query := make(map[string][]string, len(_query))
 	for k, v := range _query {
 		query[strings.ToLower(k)] = v
 	}
 
+	queryGet := func(key string) string {
+		if query == nil {
+			return ""
+		}
+		v, ok := query[key]
+		if !ok || len(v) == 0 {
+			return ""
+		}
+		return v[0]
+	}
 	scheme := strings.ToLower(strings.TrimSpace(u.Scheme))
 
 	var upProxy ProxyClient
@@ -138,10 +155,17 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 
 	switch scheme {
 	case "direct":
-		if localAddr, ok := query["localaddr"]; ok {
-			return newDriectProxyClient(localAddr[0], query)
+		localAddr := queryGet("localaddr")
+		if localAddr == "" {
+			localAddr = ":0"
 		}
-		return newDriectProxyClient(":0", query)
+
+		splitHttp := false
+		if strings.ToLower(queryGet("splithttp")) == "true" {
+			splitHttp = true
+		}
+
+		return newDriectProxyClient(localAddr, splitHttp, query)
 
 	case "socks4", "socks4a", "socks5":
 		username := ""
@@ -159,16 +183,16 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 		}
 
 		standardHeader := false
-		if strings.ToLower(u.Query().Get("standardheader")) == "true" {
+		if strings.ToLower(queryGet("standardheader")) == "true" {
 			standardHeader = true
 		}
 
 		insecureSkipVerify := false
-		if strings.ToLower(u.Query().Get("insecureskipverify")) == "true" {
+		if strings.ToLower(queryGet("insecureskipverify")) == "true" {
 			insecureSkipVerify = true
 		}
 
-		domain := u.Query().Get("domain")
+		domain := queryGet("domain")
 
 		return newHTTPProxyClient(scheme, u.Host, domain, auth, insecureSkipVerify, standardHeader, upProxy, query)
 	case "ss":
