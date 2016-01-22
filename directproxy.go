@@ -2,7 +2,6 @@ package proxyclient
 
 import (
 	"net"
-
 	"errors"
 	"fmt"
 	"strings"
@@ -112,7 +111,7 @@ func (p *directProxyClient) DialTCP(network string, laddr, raddr *net.TCPAddr) (
 	}
 
 	splitHttp := false
-	if p.splitHttp && laddr.Port == 80 {
+	if p.splitHttp && raddr.Port == 80 {
 		splitHttp = true
 	}
 
