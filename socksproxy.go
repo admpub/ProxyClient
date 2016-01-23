@@ -51,7 +51,7 @@ func newSocksProxyClient(proxyType, proxyAddr, username, password string, upProx
 	}
 
 	if upProxy == nil {
-		nUpProxy, err := newDriectProxyClient("",false, make(map[string][]string))
+		nUpProxy, err := newDriectProxyClient("",false,0, make(map[string][]string))
 		if err != nil {
 			return nil, fmt.Errorf("创建直连代理错误：%v", err)
 		}

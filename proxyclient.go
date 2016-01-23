@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"strconv"
 )
 
 // Conn 用来表示连接
@@ -121,6 +122,8 @@ type ProxyClient interface {
 //              注意： Web 防火墙类软件、设备可能会重组 HTTP 包，造成拆分无效。目前已知 ESET Smart Security 会造成这个功能无效，即使暂停防火墙也一样无效。
 //              G|ET /pa|th H|TTTP/1.0
 //              HO|ST:www.aa|dd.com
+//     可选参数： sleep=0  建立连接后延迟多少毫秒发送数据，配合 ttl 反劫持系统时建议设置为10置50。默认值 0 .
+
 func NewProxyClient(addr string) (ProxyClient, error) {
 	u, err := url.Parse(addr)
 	if err != nil {
@@ -165,7 +168,16 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 			splitHttp = true
 		}
 
-		return newDriectProxyClient(localAddr, splitHttp, query)
+		sleep := 0 * time.Millisecond
+		if queryGet("sleep") != "" {
+			if s, err := strconv.Atoi(queryGet("sleep")); err != nil {
+				return nil,fmt.Errorf("sleep 参数错误：%v", err)
+			}else {
+				sleep = time.Duration(s) * time.Millisecond
+			}
+		}
+
+		return newDriectProxyClient(localAddr, splitHttp, sleep, query)
 
 	case "socks4", "socks4a", "socks5":
 		username := ""

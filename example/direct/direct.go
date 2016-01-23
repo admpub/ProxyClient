@@ -6,7 +6,9 @@ import (
 )
 
 func main() {
-	p, err := proxyclient.NewProxyClient("direct://0.0.0.0:0000?SplitHttp=true")
+	// 启用 http 协议分包(将 http 协议拆分到多个包)
+	// 建立连接后第一次发送数据等待 5000 毫秒
+	p, err := proxyclient.NewProxyClient("direct://0.0.0.0:0000?SplitHttp=true&sleep=5000")
 	if err != nil {
 		panic(err)
 	}

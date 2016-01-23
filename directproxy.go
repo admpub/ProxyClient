@@ -11,7 +11,8 @@ import (
 
 type directTCPConn struct {
 	net.TCPConn
-	splitHttp   bool // 是否拆分HTTP包
+	splitHttp   bool      // 是否拆分HTTP包
+	wTime       time.Time // 可写时间
 	proxyClient *directProxyClient
 }
 
@@ -23,6 +24,7 @@ type directProxyClient struct {
 	TCPLocalAddr net.TCPAddr
 	UDPLocalAddr net.UDPAddr
 	splitHttp    bool
+	sleep        time.Duration
 	query        map[string][]string
 }
 
@@ -33,7 +35,7 @@ func directInit() {
 // 创建代理客户端
 // 直连 direct://0.0.0.0:0000/?LocalAddr=123.123.123.123:0
 // SplitHttp                拆分http请求到多个TCP包
-func newDriectProxyClient(localAddr string, splitHttp bool, query map[string][]string) (ProxyClient, error) {
+func newDriectProxyClient(localAddr string, splitHttp bool, sleep time.Duration, query map[string][]string) (ProxyClient, error) {
 	if localAddr == "" {
 		localAddr = ":0"
 	}
@@ -48,7 +50,7 @@ func newDriectProxyClient(localAddr string, splitHttp bool, query map[string][]s
 		return nil, errors.New("LocalAddr 错误的格式")
 	}
 
-	return &directProxyClient{*tcpAddr, *udpAddr, splitHttp, query}, nil
+	return &directProxyClient{*tcpAddr, *udpAddr, splitHttp, sleep, query}, nil
 }
 
 func (p *directProxyClient) Dial(network, address string) (net.Conn, error) {
@@ -90,10 +92,15 @@ func (p *directProxyClient) DialTimeout(network, address string, timeout time.Du
 			splitHttp = true
 		}
 	}
+	wTime := time.Time{}
+	if p.sleep != 0 {
+		wTime = time.Now()
+		wTime = wTime.Add(p.sleep)
+	}
 
 	switch conn := conn.(type) {
 	case *net.TCPConn:
-		return &directTCPConn{*conn, splitHttp, p}, nil
+		return &directTCPConn{*conn, splitHttp, wTime, p}, nil
 	case *net.UDPConn:
 		return &directUDPConn{*conn, p}, nil
 	default:
@@ -114,8 +121,13 @@ func (p *directProxyClient) DialTCP(network string, laddr, raddr *net.TCPAddr) (
 	if p.splitHttp && raddr.Port == 80 {
 		splitHttp = true
 	}
+	wTime := time.Time{}
+	if p.sleep != 0 {
+		wTime = time.Now()
+		wTime = wTime.Add(p.sleep)
+	}
 
-	return &directTCPConn{*conn, splitHttp, p}, nil
+	return &directTCPConn{*conn, splitHttp, wTime, p}, nil
 }
 
 func (p *directProxyClient)DialTCPSAddr(network string, raddr string) (ProxyTCPConn, error) {
@@ -142,9 +154,14 @@ func (p *directProxyClient)DialTCPSAddrTimeout(network string, raddr string, tim
 			splitHttp = true
 		}
 	}
+	wTime := time.Time{}
+	if p.sleep != 0 {
+		wTime = time.Now()
+		wTime = wTime.Add(p.sleep)
+	}
 
 	if tcpConn, ok := conn.(*net.TCPConn); ok {
-		return &directTCPConn{*tcpConn, splitHttp, p}, nil
+		return &directTCPConn{*tcpConn, splitHttp, wTime, p}, nil
 	}
 	return nil, fmt.Errorf("内部错误")
 }
@@ -224,6 +241,11 @@ func SplitHttp(b[]byte) (res [][]byte) {
 }
 
 func (c *directTCPConn) Write(b[]byte) (n int, err error) {
+	if c.wTime.IsZero() == false {
+		c.wTime = time.Time{}
+		time.Sleep(c.wTime.Sub(time.Now()))
+	}
+
 	if c.splitHttp == false {
 		return c.TCPConn.Write(b)
 	}
