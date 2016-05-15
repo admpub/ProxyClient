@@ -188,7 +188,6 @@ func (c *directTCPConn) ProxyClient() ProxyClient {
 
 // 拆分 http 请求
 // 查找 'GET', 'HEAD', 'PUT', 'POST', 'TRACE', 'OPTIONS', 'DELETE', 'CONNECT' 及 HTTP、HOST
-//
 func SplitHttp(b []byte) (res [][]byte) {
 	split := func(b []byte, i int) [][]byte {
 		// 根据 i的值拆分成为 2 个 []byte 。
