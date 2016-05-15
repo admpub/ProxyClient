@@ -185,12 +185,12 @@ func (p *httpProxyClient) DialTCPSAddrTimeout(network string, raddr string, time
 				xpath += "X"
 			}
 
-			req.Header.Add("Accept", "text/html, application/xhtml+xml, image/jxr, */*")
-			req.Header.Add("Accept-Encoding", "gzip, deflate")
-			req.Header.Add("Accept-Language", "zh-CN")
-			req.Header.Add("XXnnection", "Keep-Alive")
-			req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/000.00 (KHTML, like Gecko) Chrome/00.0.0000.0 Safari/000.00 Edge/00.00000")
-			req.Header.Add("Cookie+path", xpath)
+			req.Header.Add("A00ept", "text/html, application/xhtml+xml, image/jxr, */*")
+			req.Header.Add("A00000000000ing", "gzip, deflate")
+			req.Header.Add("A0000000000000e", "zh-CN")
+			req.Header.Add("XXnnection", "000p-0000")
+			req.Header.Add("U000000ent", "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+			req.Header.Add("C0000000ath", xpath)
 
 		}
 

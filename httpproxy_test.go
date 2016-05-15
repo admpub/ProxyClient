@@ -42,7 +42,7 @@ func testHTTPProixyServer(t *testing.T, proxyAddr string, rAddr string, ci chan 
 		t.Fatalf("请求中未发现 User-Agent")
 	}
 
-	if _, err := c.Write([]byte("HTTP/1.0 200 ok\r\nAAA:111\r\n\r\n")); err != nil {
+	if _, err := c.Write([]byte("HTTP/1.0 200 ok\r\n00000:aaaaa\r\n\r\n")); err != nil {
 		t.Fatalf("写数据错误")
 	}
 
