@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	socksCmdConect = 0x01
-	socksCmdBind = 0x02
+	socksCmdConect       = 0x01
+	socksCmdBind         = 0x02
 	socksCmdUDPAssociate = 0x03
 )
 
@@ -51,7 +51,7 @@ func newSocksProxyClient(proxyType, proxyAddr, username, password string, upProx
 	}
 
 	if upProxy == nil {
-		nUpProxy, err := newDriectProxyClient("",false,0, make(map[string][]string))
+		nUpProxy, err := newDriectProxyClient("", false, 0, make(map[string][]string))
 		if err != nil {
 			return nil, fmt.Errorf("创建直连代理错误：%v", err)
 		}
@@ -67,7 +67,7 @@ func newSocksProxyClient(proxyType, proxyAddr, username, password string, upProx
 			return nil, fmt.Errorf("用户名或密码过长。")
 		}
 
-		Socket5Authentication = make([]byte, 0, 3 + userLen + passLen)
+		Socket5Authentication = make([]byte, 0, 3+userLen+passLen)
 		Socket5Authentication = append(Socket5Authentication, 0x01, byte(userLen))
 		Socket5Authentication = append(Socket5Authentication, []byte(username)...)
 		Socket5Authentication = append(Socket5Authentication, byte(passLen))
@@ -258,14 +258,14 @@ func socksLogin(c net.Conn, p *socksProxyClient) error {
 			}
 		}
 		return nil
-	}else {
+	} else {
 		return fmt.Errorf("不被支持的代理服务器类型: %v", p.proxyType)
 	}
 }
 
 // 发送 socks 命令请求
 func socksSendCmdRequest(w io.Writer, p *socksProxyClient, cmd byte, raddr string) error {
-	b := make([]byte, 0, 6 + len(raddr))
+	b := make([]byte, 0, 6+len(raddr))
 
 	var port uint16
 	host, portString, err := net.SplitHostPort(raddr)
@@ -373,7 +373,7 @@ func socksSendCmdRequest(w io.Writer, p *socksProxyClient, cmd byte, raddr strin
 // 服务器应答状态码成功时 err == nil
 // 所以一般只需要判断 err 即可，不需要判断 rep
 func socksRecvCmdResponse(r io.Reader, p *socksProxyClient) (rep int, dstAddr string, dstPort uint16, bndAddr string, bndPort uint16, err error) {
-	b := make([]byte, 255 + 10)
+	b := make([]byte, 255+10)
 	if p.proxyType == "socks4" || p.proxyType == "socks4a" {
 		//ver
 		if _, cerr := io.ReadFull(r, b[:1]); cerr != nil || b[0] != 0x04 {
@@ -393,7 +393,7 @@ func socksRecvCmdResponse(r io.Reader, p *socksProxyClient) (rep int, dstAddr st
 		}
 
 		dstPort = binary.BigEndian.Uint16(b[1:3])
-		dstIP := net.IP(b[3 : 3 + 4])
+		dstIP := net.IP(b[3 : 3+4])
 		dstAddr = dstIP.String()
 
 		return
@@ -457,6 +457,6 @@ func socksRecvCmdResponse(r io.Reader, p *socksProxyClient) (rep int, dstAddr st
 	}
 }
 
-func (p *socksProxyClient)GetProxyAddrQuery() map[string][]string {
+func (p *socksProxyClient) GetProxyAddrQuery() map[string][]string {
 	return p.query
 }

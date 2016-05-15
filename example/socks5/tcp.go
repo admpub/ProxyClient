@@ -15,7 +15,7 @@ func main() {
 
 	c, err := p.Dial("tcp", "www.163.com:80")
 	if err != nil {
-		panic("连接错误"+err.Error())
+		panic("连接错误" + err.Error())
 	}
 
 	io.WriteString(c, "GET / HTTP/1.0\r\nHOST:www.163.com\r\n\r\n")
