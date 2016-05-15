@@ -185,18 +185,20 @@ func (p *httpProxyClient) DialTCPSAddrTimeout(network string, raddr string, time
 				xpath += "X"
 			}
 
-			req.Header.Add("A00ept", "text/html, application/xhtml+xml, image/jxr, */*")
-			req.Header.Add("A00000000000ing", "gzip, deflate")
-			req.Header.Add("A0000000000000e", "zh-CN")
+			req.Header.Add("Ac0ept", "text/html, application/xhtml+xml, image/jxr, */*")
+			req.Header.Add("Acc000-Encoding", "gzip, deflate")
+			req.Header.Add("Ac000t-Language", "zh-CN")
 			req.Header.Add("XXnnection", "000p-0000")
-			req.Header.Add("U000000ent", "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-			req.Header.Add("C0000000ath", xpath)
+			req.Header.Add("Us0000gent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/000.00 (KHTML, like Gecko) Chrome/00.0.0000.0 Safari/000.00 Edge/00.00000")
+			req.Header.Add("Cookie+path", xpath)
 
 		}
 
-		auth := base64.StdEncoding.EncodeToString([]byte(p.auth))
-		auth = fmt.Sprintf("Basic %v", auth)
-		req.Header.Add("Proxy-Authorization", auth)
+		if p.auth != "" {
+			auth := base64.StdEncoding.EncodeToString([]byte(p.auth))
+			auth = fmt.Sprintf("Basic %v", auth)
+			req.Header.Add("Proxy-Authorization", auth)
+		}
 
 		if err := req.Write(c); err != nil {
 			closed = true
