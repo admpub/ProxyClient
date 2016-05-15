@@ -1,5 +1,5 @@
 # ProxyClient
-[![Build Status](https://travis-ci.org/GameXG/ProxyClient.svg?branch=master)](https://travis-ci.org/GameXG/ProxyClient) [![GoDoc](https://godoc.org/github.com/GameXG/ProxyClient?status.svg)](https://godoc.org/github.com/GameXG/ProxyClient) [![Go Report Card](https://goreportcard.com/badge/github.com/GameXG/ProxyClient)](https://goreportcard.com/report/github.com/GameXG/ProxyClient)  [![codebeat badge](https://codebeat.co/badges/8c16f19c-b868-4ad2-9334-4f3ae05606b3)](https://codebeat.co/projects/github-com-gamexg-proxyclient)
+[![Build Status](https://travis-ci.org/GameXG/ProxyClient.svg?branch=master)](https://travis-ci.org/GameXG/ProxyClient) [![GoDoc](https://godoc.org/github.com/GameXG/ProxyClient?status.svg)](https://godoc.org/github.com/GameXG/ProxyClient) [![Go Report Card](https://goreportcard.com/badge/github.com/GameXG/ProxyClient)](https://goreportcard.com/report/github.com/GameXG/ProxyClient) [![codebeat badge](https://codebeat.co/badges/8c16f19c-b868-4ad2-9334-4f3ae05606b3)](https://codebeat.co/projects/github-com-gamexg-proxyclient)
 
 golang 代理客户端，和 net 标准库一致的 API 。
 支持嵌套代理，支持 socks4、socks4a、socks5、http、https、ss 代理协议。其中 socks5 支持用户名、密码认证，http、https支持用户名、密码基本认证。
