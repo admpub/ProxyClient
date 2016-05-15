@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"io"
 	"net"
-	"fmt"
 )
 
 const (CONNECT = "CONNECT")
