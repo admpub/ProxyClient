@@ -235,8 +235,10 @@ func socksLogin(c net.Conn, p *socksProxyClient) error {
 			}
 
 			buf := make([]byte, 2)
-			if _, err := io.ReadFull(c, buf); err != nil || bytes.Equal(buf, []byte{0x05, 0x00}) != true {
-				return fmt.Errorf("服务器不支持“不需要鉴定”，回应：%v", buf)
+			if n, err := io.ReadFull(c, buf); err != nil {
+				return fmt.Errorf("连接错误，接收鉴定回应失败。%v", err)
+			} else if bytes.Equal(buf[:n], []byte{0x05, 0x00}) != true {
+				return fmt.Errorf("服务器不支持“不需要鉴定”，回应：%v", buf[:n])
 			}
 		} else {
 			// 用户名密码鉴定
