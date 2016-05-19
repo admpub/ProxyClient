@@ -320,14 +320,16 @@ func socksSendCmdRequest(w io.Writer, p *socksProxyClient, cmd byte, raddr strin
 	}
 
 	if p.proxyType == "socks5" {
-		if ip == nil { // 域名
+		if ip == nil {
+			// 域名
 			// Ver、CMD、RSV、 ATYP 、域名长度(前面解决了域名长度超过 byte 大小的问题)
 			b = append(b, 0x05, cmd, 0x00, 0x03, byte(hostSize))
 			// 域名
 			b = append(b, []byte(host)...)
 			// 端口
 			b = append(b, portByte...)
-		} else { //IPv4 or ipv6
+		} else {
+			//IPv4 or ipv6
 			// Ver、CMD、RSV、ATYP
 			if len(ip) == net.IPv4len {
 				b = append(b, 0x05, cmd, 0x00, 0x01)
@@ -342,7 +344,8 @@ func socksSendCmdRequest(w io.Writer, p *socksProxyClient, cmd byte, raddr strin
 			b = append(b, portByte...)
 		}
 
-	} else if ip == nil && p.proxyType == "socks4a" { // socks4a 域名格式
+	} else if ip == nil && p.proxyType == "socks4a" {
+		// socks4a 域名格式
 		// ver cmd
 		b = append(b, 0x04, cmd)
 		//port
@@ -353,7 +356,8 @@ func socksSendCmdRequest(w io.Writer, p *socksProxyClient, cmd byte, raddr strin
 		b = append(b, []byte(host)...)
 		b = append(b, 0)
 
-	} else if (ip != nil && p.proxyType == "socks4a") || p.proxyType == "socks4" { // 纯IP
+	} else if (ip != nil && p.proxyType == "socks4a") || p.proxyType == "socks4" {
+		// 纯IP
 		//ver cmd
 		b = append(b, 0x04, cmd)
 		//port
@@ -420,7 +424,8 @@ func socksRecvCmdResponse(r io.Reader, p *socksProxyClient) (rep int, dstAddr st
 			err = fmt.Errorf("远程代理无法连接到目标。rep=%v", b[0])
 		}
 
-		if atyp == 0x01 || atyp == 0x04 { //ipv4 or ipv6
+		if atyp == 0x01 || atyp == 0x04 {
+			//ipv4 or ipv6
 			if atyp == 0x01 {
 				b = b[:4]
 			} else {
@@ -433,7 +438,8 @@ func socksRecvCmdResponse(r io.Reader, p *socksProxyClient) (rep int, dstAddr st
 				return
 			}
 			bndAddr = net.IP(b).String()
-		} else if atyp == 0x03 { //域名
+		} else if atyp == 0x03 {
+			//域名
 			b = b[:domainSize]
 
 			if _, cerr := io.ReadFull(r, b); cerr != nil {
@@ -441,7 +447,8 @@ func socksRecvCmdResponse(r io.Reader, p *socksProxyClient) (rep int, dstAddr st
 				return
 			}
 			bndAddr = string(b)
-		} else { //未知的地址类型，不确定响应长度，退出
+		} else {
+			//未知的地址类型，不确定响应长度，退出
 			err = fmt.Errorf("[socks5]未知的地址类型，atyp=%v", atyp)
 			return
 		}
