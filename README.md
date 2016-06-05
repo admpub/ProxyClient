@@ -4,7 +4,40 @@
 golang 代理客户端，和 net 标准库一致的 API 。
 支持嵌套代理，支持 socks4、socks4a、socks5、http、https、ss 代理协议。其中 socks5 支持用户名、密码认证，http、https支持用户名、密码基本认证。
 
+socks5 例子，其他例子请参考 example 目录。
+``` go 
+package main
 
+import (
+	"fmt"
+	"github.com/gamexg/proxyclient"
+	"io"
+	"io/ioutil"
+)
+
+func main() {
+	p, err := proxyclient.NewProxyClient("socks5://user1:82979@127.0.0.1:6789")
+	if err != nil {
+		panic(err)
+	}
+
+	c, err := p.Dial("tcp", "www.163.com:80")
+	if err != nil {
+		panic(err)
+	}
+
+	io.WriteString(c, "GET / HTTP/1.0\r\nHOST:www.163.com\r\n\r\n")
+	b, err := ioutil.ReadAll(c)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Print(string(b))
+}
+
+```
+
+
+API
 ``` go
 
 
