@@ -157,7 +157,7 @@ func (p *httpProxyClient) DialTCPSAddrTimeout(network string, raddr string, time
 			c = tlsConn
 		}
 
-		req, err := http.NewRequest("CONNECT", raddr, nil)
+		req, err := http.NewRequest("CONNECT", "", nil)
 		if err != nil {
 			closed = true
 			c.Close()
@@ -168,8 +168,8 @@ func (p *httpProxyClient) DialTCPSAddrTimeout(network string, raddr string, time
 			return
 		}
 		//req.URL.Path = raddr
-		req.URL.Host = raddr
 		req.Host = raddr
+		//req.URL.RawPath = raddr
 
 		if p.standardHeader {
 			xpath := "/"
