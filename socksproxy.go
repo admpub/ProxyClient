@@ -46,7 +46,9 @@ type socksProxyClient struct {
 // UpProxy
 func newSocksProxyClient(proxyType, proxyAddr, username, password string, upProxy ProxyClient, query map[string][]string) (ProxyClient, error) {
 	proxyType = strings.ToLower(strings.Trim(proxyType, " \r\n\t"))
-	if proxyType != "socks4" && proxyType != "socks5" {
+	switch proxyType {
+	case "socks4", "socks4a", "socks5":
+	default:
 		return nil, errors.New("ProxyType 错误的格式")
 	}
 
@@ -159,7 +161,7 @@ func (p *socksProxyClient) DialTCPSAddrTimeout(network string, raddr string, tim
 		if cerr != nil {
 			closed = true
 			c.Close()
-			rerr = fmt.Errorf("请求代理服务器建立连接失败：%v", err)
+			rerr = fmt.Errorf("请求代理服务器建立连接失败：%v", cerr)
 			ch <- 0
 			return
 		}
@@ -364,6 +366,7 @@ func socksSendCmdRequest(w io.Writer, p *socksProxyClient, cmd byte, raddr strin
 		b = append(b, portByte...)
 		// ip
 		b = append(b, []byte(ip)...)
+		b = append(b, 0)
 	} else {
 		return fmt.Errorf("未知的 socks 代理类型：%v", p.proxyType)
 	}
@@ -382,7 +385,7 @@ func socksRecvCmdResponse(r io.Reader, p *socksProxyClient) (rep int, dstAddr st
 	b := make([]byte, 255+10)
 	if p.proxyType == "socks4" || p.proxyType == "socks4a" {
 		//ver
-		if _, cerr := io.ReadFull(r, b[:1]); cerr != nil || b[0] != 0x04 {
+		if _, cerr := io.ReadFull(r, b[:1]); cerr != nil || b[0] != 0 {
 			err = fmt.Errorf("socks4代理服务器 命令响应错误，ver=%v", b[0])
 			return
 		}
