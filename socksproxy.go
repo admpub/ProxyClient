@@ -1,13 +1,12 @@
 package proxyclient
 
 import (
-	"net"
-
 	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -311,7 +310,7 @@ func socksSendCmdRequest(w io.Writer, p *socksProxyClient, cmd byte, raddr strin
 
 	// 将16字节长度的IPv4地址转换为4字节长
 	if ip != nil && len(ip) != net.IPv4len {
-		if nip := ip.To4(); nip != nil {
+		if nip := ip.To4(); len(nip) == net.IPv4len {
 			ip = nip
 		}
 	}
