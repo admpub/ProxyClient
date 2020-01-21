@@ -192,7 +192,9 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 	case "http", "https":
 		auth := ""
 		if u.User != nil {
-			auth = u.User.String()
+			password,_:=u.User.Password()
+			// 必须自己重新生成，因为 User.String() 会将密码内的 ! 等特殊符号编码，造成鉴定失败
+			auth =fmt.Sprintf("%v:%v", u.User.Username(),password)
 		}
 
 		standardHeader := false
