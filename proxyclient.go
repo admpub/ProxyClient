@@ -216,6 +216,12 @@ func NewProxyClient(addr string) (ProxyClient, error) {
 			return nil, fmt.Errorf("ss 代理 method, password 格式错误。")
 		}
 		return newSsProxyClient(u.Host, u.User.Username(), password, upProxy, query)
+	case "ssr": 
+		password, ok := u.User.Password()
+		if ok == false {
+			return nil, fmt.Errorf("ssr 代理 method, password 格式错误。")
+		}
+		return newSsrProxyClient(u.Host, u.User.Username(), password, upProxy, query)
 	default:
 		return nil, fmt.Errorf("未识别的代理类型：%v", scheme)
 	}
